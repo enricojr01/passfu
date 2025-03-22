@@ -6,15 +6,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli"
-	"gorm.io/gorm"
 )
-
-type Record struct {
-	gorm.Model
-	Name     string
-	Username string
-	Password string
-}
 
 func main() {
 	var me cli.Author = cli.Author{
