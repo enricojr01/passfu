@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
-	"passfu/easycipher"
+	"log"
+	"os"
 
+	"github.com/urfave/cli"
 	"gorm.io/gorm"
 )
 
@@ -15,35 +17,30 @@ type Record struct {
 }
 
 func main() {
-	var password string = "Super secret password"
-	var plaintext string = "Have you heard of the critically acclaimed MMORPG Final Fantasy XIV?"
-	var ciphertext []byte
-	var err error
-
-	var easyCipher easycipher.EasyCipher
-	easyCipher, err = easycipher.NewEC(password)
-	if err != nil {
-		panic(err)
+	var me cli.Author = cli.Author{
+		Name:  "Enrico Tuvera Jr",
+		Email: "test@gmail.com",
 	}
 
-	fmt.Println("plaintext: ", plaintext)
-	fmt.Println("key: ", easyCipher.Key)
-	fmt.Println("salt: ", easyCipher.Salt)
-	fmt.Println("iv: ", easyCipher.Iv)
-	easyCipher.Encrypt(plaintext)
-	fmt.Println(easyCipher.Ciphertext)
-	ciphertext = easyCipher.ExportCiphertext()
-	fmt.Println(ciphertext)
-	fmt.Println()
-	fmt.Println()
+	var authors []cli.Author
+	authors = append(authors, me)
 
-	// now the other way!
+	var commands []cli.Command
+	commands = append(commands, NewDatabase)
 
-	var easy2 easycipher.EasyCipher = easycipher.NewECFromCiphertext(ciphertext, password)
-	fmt.Println("key: ", easy2.Key)
-	fmt.Println("salt: ", easy2.Salt)
-	fmt.Println("iv: ", easy2.Iv)
-	var plaintext2 []byte = easy2.Decrypt()
+	var app *cli.App = &cli.App{
+		Name:  "passfu",
+		Usage: "A password manager for the command line.",
+		Action: func(*cli.Context) error {
+			fmt.Println("Test! If you see this it's working.")
+			return nil
+		},
+		Authors:  authors,
+		Commands: commands,
+	}
 
-	fmt.Println("plaintext: ", string(plaintext2))
+	var err error = app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

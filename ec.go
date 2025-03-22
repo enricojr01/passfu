@@ -1,4 +1,4 @@
-package easycipher
+package main
 
 import (
 	"crypto/aes"
@@ -52,7 +52,6 @@ func (ec *EasyCipher) Decrypt() []byte {
 	}
 
 	return plaintextByte
-
 }
 
 func NewECFromCiphertext(ciphertext []byte, password string) EasyCipher {
@@ -85,17 +84,17 @@ func NewEC(password string) (EasyCipher, error) {
 
 	newSalt, err = gimmeSalt()
 	if err != nil {
-		panic(err)
+		return EasyCipher{}, err
 	}
 
 	newKey, err = gimmeKey(password, newSalt)
 	if err != nil {
-		panic(err)
+		return EasyCipher{}, err
 	}
 
 	newIv, err = gimmeIV()
 	if err != nil {
-		panic(err)
+		return EasyCipher{}, err
 	}
 
 	var ec EasyCipher = EasyCipher{
@@ -127,6 +126,7 @@ func gimmeGCMCipher(key []byte) (cipher.AEAD, error) {
 
 	return aesgcm, nil
 }
+
 func gimmeSalt() ([]byte, error) {
 	var err error
 	var salt []byte = make([]byte, aes.BlockSize)
@@ -141,8 +141,9 @@ func gimmeSalt() ([]byte, error) {
 }
 
 func gimmeIV() ([]byte, error) {
+	// IV needs to be 12 bytes otherwise the GCM will complain, I have no
+	// idea why it would I'm just following directions
 	var err error
-	// The choice of 12 as the size is deliberate because GCM will complain otherwise
 	var iv []byte = make([]byte, 12)
 	_, err = io.ReadFull(rand.Reader, iv)
 	if err != nil {
