@@ -26,3 +26,5 @@ go.work.sum
 
 # db files
 *.db
+
+secrets/

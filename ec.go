@@ -6,6 +6,7 @@ import (
 	"crypto/pbkdf2"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"io"
 )
 
@@ -15,67 +16,10 @@ type EasyCipher struct {
 	Salt       []byte
 	Iv         []byte
 	Ciphertext []byte
+	Plaintext  []byte
 }
 
-func (ec *EasyCipher) Encrypt(plaintextByte []byte) {
-	var gcm cipher.AEAD
-	var err error
-
-	gcm, err = gimmeGCMCipher(ec.Key)
-	if err != nil {
-		panic(err)
-	}
-
-	ec.Ciphertext = gcm.Seal(nil, ec.Iv, plaintextByte, nil)
-}
-
-func (ec *EasyCipher) ExportCiphertext() []byte {
-	var saltiv []byte = append(ec.Salt, ec.Iv...)
-	var saltivcipher []byte = append(saltiv, ec.Ciphertext...)
-	return saltivcipher
-}
-
-func (ec *EasyCipher) Decrypt() []byte {
-	var gcm cipher.AEAD
-	var plaintextByte []byte
-	var err error
-
-	gcm, err = gimmeGCMCipher(ec.Key)
-	if err != nil {
-		panic(err)
-	}
-
-	plaintextByte, err = gcm.Open(nil, ec.Iv, ec.Ciphertext, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	return plaintextByte
-}
-
-func NewECFromCiphertext(ciphertext []byte, password string) EasyCipher {
-	var salt []byte = ciphertext[:16]
-	var iv []byte = ciphertext[16 : 16+12]
-	var key []byte
-	var err error
-
-	key, err = gimmeKey(password, salt)
-	if err != nil {
-		panic(err)
-	}
-
-	var ec EasyCipher = EasyCipher{
-		Password:   password,
-		Key:        key,
-		Salt:       salt,
-		Iv:         iv,
-		Ciphertext: ciphertext[16+12:],
-	}
-
-	return ec
-}
-
-func NewEC(password string) (EasyCipher, error) {
+func New(password string, plaintext []byte) (EasyCipher, error) {
 	var newSalt []byte
 	var newIv []byte
 	var newKey []byte
@@ -102,9 +46,82 @@ func NewEC(password string) (EasyCipher, error) {
 		Salt:       newSalt,
 		Iv:         newIv,
 		Ciphertext: nil,
+		Plaintext:  plaintext,
 	}
 
 	return ec, nil
+}
+
+func NewFromCiphertext(ciphertext []byte, password string) (EasyCipher, error) {
+	var salt []byte = ciphertext[:16]
+	var iv []byte = ciphertext[16 : 16+12]
+	var cleanciphertext []byte = ciphertext[16+12:]
+	var key []byte
+	var err error
+
+	key, err = gimmeKey(password, salt)
+	if err != nil {
+		return EasyCipher{}, err
+	}
+
+	// Ciphertext needs to include the salt + iv otherwise authentication
+	// will fail.
+	var ec EasyCipher = EasyCipher{
+		Password:   password,
+		Key:        key,
+		Salt:       salt,
+		Iv:         iv,
+		Ciphertext: cleanciphertext,
+		Plaintext:  nil,
+	}
+
+	return ec, nil
+}
+
+func (ec *EasyCipher) Encrypt() {
+	// implementation notes:
+	// take plaintext, encrypt first, THEN append the salt + iv
+	// encrypting the salt + iv will cause message auth to fail
+	var gcm cipher.AEAD
+	var ciphertext []byte
+	var err error
+
+	gcm, err = gimmeGCMCipher(ec.Key)
+	if err != nil {
+		panic(err)
+	}
+
+	if ec.Ciphertext != nil {
+		err = errors.New("ec.Ciphertext not nil! Create a new EC instead of reusing this one")
+		panic(err)
+	}
+
+	ciphertext = gcm.Seal(nil, ec.Iv, ec.Plaintext, nil)
+	var siv []byte = append(ec.Salt, ec.Iv...)
+	var sivcipher []byte = append(siv, ciphertext...)
+	ec.Ciphertext = sivcipher
+}
+
+func (ec *EasyCipher) Decrypt() {
+	var gcm cipher.AEAD
+	var dirtycipher []byte
+	var err error
+
+	gcm, err = gimmeGCMCipher(ec.Key)
+	if err != nil {
+		panic(err)
+	}
+
+	if ec.Plaintext != nil {
+		err = errors.New("ec.Plaintext not nil! Create a new EC instead of reusing this one")
+		panic(err)
+	}
+
+	dirtycipher, err = gcm.Open(nil, ec.Iv, ec.Ciphertext, nil)
+	if err != nil {
+		panic(err)
+	}
+	ec.Plaintext = dirtycipher
 }
 
 func gimmeGCMCipher(key []byte) (cipher.AEAD, error) {
@@ -156,6 +173,8 @@ func gimmeKey(password string, salt []byte) ([]byte, error) {
 	var key []byte
 	var err error
 
+	// for pbkdf2.Key() to return the same key given a password, the salt
+	// used needs to be the same.
 	key, err = pbkdf2.Key(sha256.New, password, salt, 4096, 32)
 	if err != nil {
 		return nil, err

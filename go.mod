@@ -4,6 +4,7 @@ go 1.24.1
 
 require (
 	github.com/urfave/cli v1.22.16
+	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 )
 
@@ -14,5 +15,4 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
-	gorm.io/driver/sqlite v1.5.7 // indirect
 )
