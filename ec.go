@@ -17,9 +17,8 @@ type EasyCipher struct {
 	Ciphertext []byte
 }
 
-func (ec *EasyCipher) Encrypt(plaintext string) {
+func (ec *EasyCipher) Encrypt(plaintextByte []byte) {
 	var gcm cipher.AEAD
-	var plaintextByte []byte = []byte(plaintext)
 	var err error
 
 	gcm, err = gimmeGCMCipher(ec.Key)
