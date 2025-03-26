@@ -20,6 +20,7 @@ func main() {
 	var commands []cli.Command
 	commands = append(commands, NewDatabase)
 	commands = append(commands, EncryptDatabase)
+	commands = append(commands, DecryptDatabase)
 
 	var app *cli.App = &cli.App{
 		Name:  "passfu",

@@ -35,10 +35,14 @@ var NewDatabase cli.Command = cli.Command{
 }
 
 var EncryptDatabase cli.Command = cli.Command{
-	Name:  "encryptdb",
-	Usage: "Encrypts a database file with a master password.",
+	Name:  "encrypt",
+	Usage: "Encrypts the contents of <infile> with a <masterpassword> and writes the encrypted content to <outfile>.",
 	Action: func(ctx *cli.Context) error {
 		var args cli.Args = ctx.Args()
+
+		if len(args) != 3 {
+			return errors.New("usage: encryptdb <infile> <outfile> <masterpassword>")
+		}
 
 		var file string = args[0]
 		var outfile string = args[1]
@@ -48,10 +52,6 @@ var EncryptDatabase cli.Command = cli.Command{
 		var data []byte
 		var encryptedata []byte
 		var err error
-
-		if len(args) != 3 {
-			return errors.New("usage: encryptdb <infile> <outfile> <masterpassword>")
-		}
 
 		data, err = os.ReadFile(file)
 		if err != nil {
@@ -73,6 +73,49 @@ var EncryptDatabase cli.Command = cli.Command{
 
 		fmt.Println("If you see this, the follwing file has been written: ", outfile)
 
+		return nil
+	},
+}
+
+var DecryptDatabase cli.Command = cli.Command{
+	Name:  "decrypt",
+	Usage: "Decrypts <infile> with a <masterpassword> and writes the decrypted content to <outfile>.",
+	Action: func(ctx *cli.Context) error {
+		var args cli.Args = ctx.Args()
+
+		if len(args) != 3 {
+			return errors.New("usage: decrypt <infile> <outfile> <masterpassword>")
+		}
+
+		var infile string = args[0]
+		var outfile string = args[1]
+		var masterpass string = args[2]
+
+		var data []byte
+		var err error
+		data, err = os.ReadFile(infile)
+		if err != nil {
+			return err
+		}
+
+		var ec EasyCipher = NewECFromCiphertext(data, masterpass)
+		var decrypted []byte = ec.Decrypt()
+
+		err = os.WriteFile(outfile, decrypted, 0644)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("If you see this, the follwing file has been written: ", outfile)
+
+		return nil
+	},
+}
+
+var DecryptSanityCheck cli.Command = cli.Command{
+	Name:  "sanitycheck",
+	Usage: "(dev only) checks to see if the decrypted contents of a file match the original unencrypted contents",
+	Action: func(ctx *cli.Context) error {
 		return nil
 	},
 }
