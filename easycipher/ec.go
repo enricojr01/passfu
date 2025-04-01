@@ -32,6 +32,11 @@ type EasyCipher struct {
 // This function generates a new EasyCipher{} from a "master password" and
 // a stream of bytes. It is meant to be used on data that has yet to be
 // encrypted.
+// example usage:
+// var ec easycipher.EasyCipher = New("secretpw", []byte("We attack at dawn."))
+// ec.Encrypt()
+// // ec.Ciphertext can be written to file or used wherever
+// fmt.Println(ec.Ciphertext)
 func New(password string, plaintext []byte) (EasyCipher, error) {
 	var newSalt []byte
 	var newIv []byte

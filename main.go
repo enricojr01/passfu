@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"passfu/commandpkg"
+	"passfu/pwstore"
 
 	"github.com/urfave/cli"
 )
@@ -18,10 +20,10 @@ func main() {
 	authors = append(authors, me)
 
 	var commands []cli.Command
-	commands = append(commands, NewDatabase)
-	commands = append(commands, EncryptDatabase)
-	commands = append(commands, DecryptDatabase)
-	commands = append(commands, SanityCheck)
+	commands = append(commands, pwstore.NewDatabase)
+	commands = append(commands, commandpkg.EncryptDatabase)
+	commands = append(commands, commandpkg.DecryptDatabase)
+	commands = append(commands, commandpkg.SanityCheck)
 
 	var app *cli.App = &cli.App{
 		Name:  "passfu",

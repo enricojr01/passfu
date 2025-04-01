@@ -1,6 +1,8 @@
-package main
+package pwstore
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type Record struct {
 	gorm.Model
