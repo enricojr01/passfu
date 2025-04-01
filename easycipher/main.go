@@ -1,4 +1,4 @@
-package main
+package easycipher
 
 import (
 	"crypto/aes"
@@ -10,6 +10,16 @@ import (
 	"io"
 )
 
+// EasyCipher is a utility class designed to make encrypting / decrypting
+// easier.
+// The encryption method used in this module is almost identical to the one
+// described in the Bitwarden whitepaper:
+// A "master password" is fed to PBKDF2 to generate a key that is used
+// to AES256 encrypt any arbitrary stream of bytes.
+// This functionality is meant to be used by passfu to encrypt / decrypt an
+// sqlite database.
+// One should not instantiate EasyCipher directly, and instead use the New()
+// and NewFromCiphertext() helper functions to generate them.
 type EasyCipher struct {
 	Password   string
 	Key        []byte
@@ -19,6 +29,9 @@ type EasyCipher struct {
 	Plaintext  []byte
 }
 
+// This function generates a new EasyCipher{} from a "master password" and
+// a stream of bytes. It is meant to be used on data that has yet to be
+// encrypted.
 func New(password string, plaintext []byte) (EasyCipher, error) {
 	var newSalt []byte
 	var newIv []byte
@@ -52,7 +65,9 @@ func New(password string, plaintext []byte) (EasyCipher, error) {
 	return ec, nil
 }
 
-func NewFromCiphertext(ciphertext []byte, password string) (EasyCipher, error) {
+// This function generates an EasyCipher{} from an already-encrypted stream
+// of bytes, and a password.
+func NewFromCiphertext(password string, ciphertext []byte) (EasyCipher, error) {
 	var salt []byte = ciphertext[:16]
 	var iv []byte = ciphertext[16 : 16+12]
 	var cleanciphertext []byte = ciphertext[16+12:]
@@ -64,8 +79,6 @@ func NewFromCiphertext(ciphertext []byte, password string) (EasyCipher, error) {
 		return EasyCipher{}, err
 	}
 
-	// Ciphertext needs to include the salt + iv otherwise authentication
-	// will fail.
 	var ec EasyCipher = EasyCipher{
 		Password:   password,
 		Key:        key,
@@ -78,10 +91,12 @@ func NewFromCiphertext(ciphertext []byte, password string) (EasyCipher, error) {
 	return ec, nil
 }
 
+// Encrypt() wraps a call to gcm.Seal(), and encrypts the plaintext. By design
+// this will only work once - calling EasyCipher{}.Encrypt() when ec.Ciphertext
+// is no longer nil will cause the program to panic(). I did this out of caution
+// because I'm not sure that allowing anyone to reuse EasyCiphers{} won't
+// cause problems or introduce security vulnerabilities.
 func (ec *EasyCipher) Encrypt() {
-	// implementation notes:
-	// take plaintext, encrypt first, THEN append the salt + iv
-	// encrypting the salt + iv will cause message auth to fail
 	var gcm cipher.AEAD
 	var ciphertext []byte
 	var err error
@@ -102,6 +117,11 @@ func (ec *EasyCipher) Encrypt() {
 	ec.Ciphertext = sivcipher
 }
 
+// Decrypt() wraps a call to gcm.Open(), and decrypts the ciphertext. By design
+// this will only work once - calling EasyCipher{}.Decrypt() when ec.Plaintext
+// is no longer nil will cause the program to panic(). I did this out of caution
+// because I'm not sure that allowing anyone to reuse EasyCiphers{} won't
+// cause problems or introduce security vulnerabilities.
 func (ec *EasyCipher) Decrypt() {
 	var gcm cipher.AEAD
 	var dirtycipher []byte

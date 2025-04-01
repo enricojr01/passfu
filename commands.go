@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"passfu/easycipher"
 	"time"
 
 	"github.com/urfave/cli"
@@ -24,6 +25,7 @@ var NewDatabase cli.Command = cli.Command{
 
 		var db *gorm.DB
 		var err error
+
 		db, err = gorm.Open(sqlitedb)
 		if err != nil {
 			return err
@@ -31,7 +33,6 @@ var NewDatabase cli.Command = cli.Command{
 
 		db.AutoMigrate(&Record{})
 		fmt.Println("If you see this, the follwing file has been written: ", filename)
-
 		return nil
 	},
 }
@@ -50,7 +51,7 @@ var EncryptDatabase cli.Command = cli.Command{
 		var outfile string = args[1]
 		var masterpass string = args[2]
 
-		var ec EasyCipher
+		var ec easycipher.EasyCipher
 		var data []byte
 		var err error
 
@@ -59,7 +60,7 @@ var EncryptDatabase cli.Command = cli.Command{
 			return err
 		}
 
-		ec, err = New(masterpass, data)
+		ec, err = easycipher.New(masterpass, data)
 		if err != nil {
 			return err
 		}
@@ -99,8 +100,8 @@ var DecryptDatabase cli.Command = cli.Command{
 			return err
 		}
 
-		var ec EasyCipher
-		ec, err = NewFromCiphertext(data, masterpass)
+		var ec easycipher.EasyCipher
+		ec, err = easycipher.NewFromCiphertext(masterpass, data)
 		if err != nil {
 			return err
 		}
@@ -129,8 +130,8 @@ var SanityCheck cli.Command = cli.Command{
 		var password string = "testpass1"
 		var err error
 
-		var ec EasyCipher
-		ec, err = New(password, []byte(instring))
+		var ec easycipher.EasyCipher
+		ec, err = easycipher.New(password, []byte(instring))
 		if err != nil {
 			return err
 		}
@@ -142,11 +143,12 @@ var SanityCheck cli.Command = cli.Command{
 		fmt.Println("ec.Ciphertext: ", ec.Ciphertext)
 
 		var ciphertext []byte = ec.Ciphertext
-		var ec2 EasyCipher
-		ec2, err = NewFromCiphertext(ciphertext, password)
+		var ec2 easycipher.EasyCipher
+		ec2, err = easycipher.NewFromCiphertext(password, ciphertext)
 		if err != nil {
 			return err
 		}
+
 		fmt.Println("ec2.Salt: ", ec2.Salt)
 		fmt.Println("ec2.Iv: ", ec2.Iv)
 		fmt.Println("ec2.Key: ", ec2.Key)
