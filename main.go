@@ -21,6 +21,8 @@ func main() {
 
 	var commands []cli.Command
 	commands = append(commands, pwstore.NewDatabase)
+	commands = append(commands, pwstore.NewPassword)
+	commands = append(commands, pwstore.GetPassword)
 	commands = append(commands, commandpkg.EncryptDatabase)
 	commands = append(commands, commandpkg.DecryptDatabase)
 	commands = append(commands, commandpkg.SanityCheck)

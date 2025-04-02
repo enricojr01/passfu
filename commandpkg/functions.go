@@ -10,6 +10,15 @@ import (
 	"github.com/urfave/cli"
 )
 
+// load file AAA
+// unencrypt contents
+// save file to tempfile
+// pass filename to open
+// operate()
+// encrypt contents
+// write to original AAA, overwrite
+// delete tempfile
+
 // This function powers the "sanitycheck" command, which is a dev command used
 // to make sure that the whole encrypt/decrypt workflow is working correctly.
 // It was used during development to refine the design of the easycipher package
