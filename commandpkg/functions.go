@@ -24,9 +24,14 @@ import (
 // It was used during development to refine the design of the easycipher package
 // and remains in-place as a tool for future debugging.
 func sanitycheck(ctx *cli.Context) error {
-	// var args cli.Args = ctx.Args()
-
-	var instring string = "Do you know about the award-winning MMO Final Fantasy XIV?"
+	var instring string = "Once out of nature I shall never take\n" +
+		"My bodily form from any natural thing\n" +
+		"But such a form as Grecian goldsmiths make\n" +
+		"Of hammered gold and gold enamelling\n" +
+		"To keep a drowsy Emperor awake\n" +
+		"Or to set upon a golden bough to sing\n" +
+		"To lords and ladies of Byzantium\n" +
+		"Of what is past, or passing, or to come\n"
 	var password string = "testpass1"
 	var err error
 
@@ -37,10 +42,13 @@ func sanitycheck(ctx *cli.Context) error {
 	}
 
 	ec.Encrypt()
+
 	fmt.Println("ec.Salt: ", ec.Salt)
 	fmt.Println("ec.Iv: ", ec.Iv)
 	fmt.Println("ec.Key: ", ec.Key)
+	fmt.Println("ec.Plaintext: ", ec.Plaintext)
 	fmt.Println("ec.Ciphertext: ", ec.Ciphertext)
+	fmt.Println()
 
 	var ciphertext []byte = ec.Ciphertext
 	var ec2 easycipher.EasyCipher
@@ -49,18 +57,22 @@ func sanitycheck(ctx *cli.Context) error {
 		return err
 	}
 
+	ec2.Decrypt()
+
 	fmt.Println("ec2.Salt: ", ec2.Salt)
 	fmt.Println("ec2.Iv: ", ec2.Iv)
 	fmt.Println("ec2.Key: ", ec2.Key)
 	fmt.Println("ec2.Ciphertext: ", ec2.Ciphertext)
+	fmt.Println("ec2.Plaintext: ", ec2.Plaintext)
+	fmt.Println()
 
 	fmt.Println("same salt? ", bytes.Equal(ec.Salt, ec2.Salt))
 	fmt.Println("same IV? ", bytes.Equal(ec.Iv, ec2.Iv))
 	fmt.Println("same key? ", bytes.Equal(ec.Key, ec2.Key))
 	fmt.Println("same plaintext? ", bytes.Equal(ec.Plaintext, ec2.Plaintext))
+	fmt.Println()
 
-	ec2.Decrypt()
-	fmt.Println("ec2.Plaintext: ", string(ec2.Plaintext))
+	fmt.Println(string(ec2.Plaintext))
 	return nil
 }
 
@@ -137,4 +149,10 @@ func decryptdb(ctx *cli.Context) error {
 	fmt.Println("If you see this, the follwing file has been written: ", outfile)
 
 	return nil
+
+	// It's worth noting that the value of ec2.Ciphertext when ec2 is created
+	// via NewFromCiphertext() isn't going to be equal to ec1.Ciphertext if
+	// ec1 was created by New().
+	// I'm not entirely certain that this is a bad thing, I need to think about
+	// it.
 }
